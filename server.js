@@ -19,6 +19,10 @@ mongoose
 //middlewares
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.send("Hello World");
+});
+
 //Routes middlewares
 app.use("/api/items", items);
 
