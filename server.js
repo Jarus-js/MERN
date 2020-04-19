@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 //routes
 const items = require("./routes/api/items");
+const auth = require("./routes/api/auth");
 const path = require("path");
 //Initialize app
 const app = express();
@@ -25,6 +26,7 @@ app.get("/", (req, res) => {
 
 //Routes middlewares
 app.use("/api/items", items);
+app.use("/api/auth", auth);
 
 //Serve static assests i.e build folder if it is in production
 if (process.env.NODE_ENV === "production") {

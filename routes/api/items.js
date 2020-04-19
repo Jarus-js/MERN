@@ -1,5 +1,5 @@
 const router = require("express").Router();
-
+const authorize = require("../../verifyToken");
 //model
 const Item = require("../../model/Item");
 
@@ -14,7 +14,7 @@ router.get("/", (req, res) => {
 });
 
 //POST =>/api/items/add
-router.post("/add", (req, res) => {
+router.post("/add", authorize, (req, res) => {
   const { name } = req.body;
   //Only saved in memory
   const newItem = new Item({
@@ -27,7 +27,7 @@ router.post("/add", (req, res) => {
 });
 
 //DELETE =>/api/items/remove/:id
-router.delete("/remove/:id", (req, res) => {
+router.delete("/remove/:id", authorize, (req, res) => {
   Item.findById(req.params.id)
     .then((item) => {
       item.remove().then(() => res.json("Succesfully Removed"));
