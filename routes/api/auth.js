@@ -20,47 +20,49 @@ router.post("/register", (req, res) => {
   const { error } = registerValidation(req.body);
   if (error) return res.status(400).send(error.details[0].message);
   //Check if email passed by user exist in db
-  User.findOne({ email }).then((dbEmail) => {
-    if (dbEmail) {
-      return res.status(400).json("Email is in use..");
-    }
-  });
-  //Hashing password
-  bcrypt.genSalt(10, (err, salt) => {
-    bcrypt.hash(password, salt, (err, hash) => {
-      const user = new User({
-        name,
-        email,
-        password: hash,
+  User.findOne({ email })
+    .then((dbEmail) => {
+      if (dbEmail) {
+        return res.status(400).json("Email is in use..");
+      }
+      //Hashing password
+      bcrypt.genSalt(10, (err, salt) => {
+        bcrypt.hash(password, salt, (err, hash) => {
+          const user = new User({
+            name,
+            email,
+            password: hash,
+          });
+          user
+            .save()
+            .then((newUser) => {
+              console.log("registeredUser", newUser);
+              //create and assign token
+              jwt.sign(
+                { _id: newUser._id, email: newUser.email },
+                process.env.SECRET,
+                (err, token) => {
+                  if (err) {
+                    res.json(err.response);
+                  } else {
+                    //res.header("auth-token", token).send(token);
+                    res.json({
+                      token,
+                      user: {
+                        id: newUser.id,
+                        name: newUser.name,
+                        email: newUser.email,
+                      },
+                    });
+                  }
+                }
+              );
+            })
+            .catch((err) => res.status(400).send(err.response));
+        });
       });
-      user
-        .save()
-        .then((newUser) => {
-          console.log("newUser", newUser);
-          //create and assign token
-          jwt.sign(
-            { _id: newUser._id, email: newUser.email },
-            process.env.SECRET,
-            (err, token) => {
-              if (err) {
-                res.json(err.response);
-              } else {
-                //res.header("auth-token", token).send(token);
-                res.json({
-                  token,
-                  user: {
-                    id: newUser.id,
-                    name: newUser.name,
-                    email: newUser.email,
-                  },
-                });
-              }
-            }
-          );
-        })
-        .catch((err) => res.status(400).send(err.response));
-    });
-  });
+    })
+    .catch((err) => res.status(500).json(err));
 });
 
 //LOGIN => /api/auth/login
@@ -75,30 +77,34 @@ router.post("/login", (req, res) => {
       return res.status(400).json("Email or Password donot Match..");
     }
     //Check if passowrd Match or Not ?
-    bcrypt.compare(password, user.password, (err, res) => {
-      if (err) return res.status(400).json("Email or Password donot Match..");
-    });
-    //create and assign token
-    jwt.sign(
-      { _id: user._id, email: user.email },
-      process.env.SECRET,
-      (err, token) => {
-        if (err) {
-          res.json(err);
-        } else {
-          //res.header("auth-token", token).send(token);
-          res.json({
-            token,
-            user: {
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              password: user.password,
-            },
-          });
+    bcrypt
+      .compare(password, user.password)
+      .then((isMatch) => {
+        if (!isMatch) {
+          return res.json("password donot match");
         }
-      }
-    );
+        //create and assign token
+        jwt.sign(
+          { _id: user._id, email: user.email },
+          process.env.SECRET,
+          (err, token) => {
+            if (err) {
+              res.json(err);
+            } else {
+              //res.header("auth-token", token).send(token);
+              res.json({
+                token,
+                user: {
+                  id: user.id,
+                  name: user.name,
+                  email: user.email,
+                },
+              });
+            }
+          }
+        );
+      })
+      .catch((err) => res.json(err));
   }); //findOne
 });
 
@@ -109,7 +115,7 @@ router.get("/user", authorize, (req, res) => {
   User.findById(req.user._id)
     .select("-password")
     .then((user) => {
-      console.log("loginUser", user);
+      console.log("currentLoginUser", user);
       res.json(user);
     })
     .catch((err) => {
