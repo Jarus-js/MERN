@@ -16,7 +16,7 @@ export const loadUser = () => (dispatch, getState) => {
   axios
     .get("/api/auth/user", setToken(token)) //yoh protected route ho yeslai access garna token chainxa so setToken which set token to header as 'x-auth-token'
     .then((response) => {
-      console.log("userLoadedResponse", response);
+      console.log("currentLoginUserResponse", response);
       dispatch({ type: "USER_LOADED", payload: response.data });
     })
     .catch((err) => {
